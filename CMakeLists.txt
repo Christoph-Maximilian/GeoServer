@@ -21,7 +21,7 @@ set(_GRPC_CPP_PLUGIN_EXECUTABLE $<TARGET_FILE:grpc_cpp_plugin>)
 
 set(hw_proto_srcs "${PROJECT_SOURCE_DIR}/test.pb.cc")
 set(hw_proto_hdrs "${PROJECT_SOURCE_DIR}/test.pb.h")
-set(hw_grpc_srcs "${PROJECT_SOURCE_DIR}/test.grpc.pb.cc")
+set(hw_grpc_srcs "${PROJECT_SOURCE_DIR}/test.grpc.pb.cc" greeter_server.cpp)
 set(hw_grpc_hdrs "${PROJECT_SOURCE_DIR}/test.grpc.pb.h")
 
 
@@ -29,5 +29,5 @@ set(hw_grpc_hdrs "${PROJECT_SOURCE_DIR}/test.grpc.pb.h")
 include_directories("${CMAKE_CURRENT_BINARY_DIR}")
 
 
-add_executable(ServerGRPCTest main.cpp  ${hw_proto_srcs}  ${hw_grpc_srcs} ${PROTO_SRCS} ${PROTO_HDRS})
+add_executable(ServerGRPCTest main.cpp greeter_server.cpp ${hw_proto_srcs}  ${hw_grpc_srcs})
 target_link_libraries(ServerGRPCTest   ${_GRPC_GRPCPP_UNSECURE} ${PROTOBUF_LIBRARIES})
