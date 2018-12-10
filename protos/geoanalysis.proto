@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package geo;
+
+service geoanalyser {
+    rpc GetNeighborhoodsCount(PointRequest) returns (NeighborhoodCounts);
+}
+
+//enumeration of single points
+message PointRequest {
+    repeated Point points = 1;
+}
+
+message Point {
+    int32 latitude = 1;
+    int32 longitude = 2;
+}
+
+message NeighborhoodCounts {
+    string name = 1;
+    int32 count = 2;
+}
