@@ -17,18 +17,19 @@ set(_PROTOBUF_PROTOC $<TARGET_FILE:protoc>)
 set(_GRPC_GRPCPP_UNSECURE grpc++_unsecure)
 set(_GRPC_CPP_PLUGIN_EXECUTABLE $<TARGET_FILE:grpc_cpp_plugin>)
 
+# Set the name of the used proto file that defines the grpc service
+set(protobuf_service_definition geoanalysis)
 
-
-set(hw_proto_srcs "${PROJECT_SOURCE_DIR}/test.pb.cc")
-set(hw_proto_hdrs "${PROJECT_SOURCE_DIR}/test.pb.h")
-set(hw_grpc_srcs "${PROJECT_SOURCE_DIR}/test.grpc.pb.cc" greeter_server.cpp)
-set(hw_grpc_hdrs "${PROJECT_SOURCE_DIR}/test.grpc.pb.h")
+set(hw_proto_srcs "${PROJECT_SOURCE_DIR}/${protobuf_service_definition}.pb.cc")
+set(hw_proto_hdrs "${PROJECT_SOURCE_DIR}/${protobuf_service_definition}.pb.h")
+set(hw_grpc_srcs "${PROJECT_SOURCE_DIR}/${protobuf_service_definition}.grpc.pb.cc" geo_analysis_server.cpp)
+set(hw_grpc_hdrs "${PROJECT_SOURCE_DIR}/${protobuf_service_definition}.grpc.pb.h")
 
 
 # Include generated *.pb.h files
 include_directories("${CMAKE_CURRENT_BINARY_DIR}")
 
 
-add_executable(ServerGRPCTest main.cpp greeter_server.cpp  ${hw_proto_srcs}  ${hw_grpc_srcs} )
+add_executable(ServerGRPCTest geo_analysis_server.cpp ${hw_proto_srcs}  ${hw_grpc_srcs} )
 
-target_link_libraries(ServerGRPCTest   ${_GRPC_GRPCPP_UNSECURE} ${PROTOBUF_LIBRARIES})
+target_link_libraries(ServerGRPCTest ${_GRPC_GRPCPP_UNSECURE} ${PROTOBUF_LIBRARIES})

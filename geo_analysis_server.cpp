@@ -11,23 +11,24 @@
 #ifdef BAZEL_BUILD
 #include "examples/protos/helloworld.grpc.pb.h"
 #else
-#include "test.grpc.pb.h"
+#include "geoanalysis.grpc.pb.h"
 #endif
 
 using grpc::Server;
 using grpc::ServerBuilder;
 using grpc::ServerContext;
 using grpc::Status;
-using helloworld::HelloRequest;
-using helloworld::HelloReply;
-using helloworld::Greeter;
+using geo::geoanalyser;
+using geo::NeighborhoodCounts;
+using geo::Point;
+using geo::PointRequest;
 
 // Logic and data behind the server's behavior.
-class GreeterServiceImpl final : public Greeter::Service {
-    Status SayHello(ServerContext* context, const HelloRequest* request,
-                    HelloReply* reply) override {
-        std::string prefix("Hello ");
-        reply->set_message(prefix + request->name());
+class GreeterServiceImpl final : public geoanalyser::Service {
+    Status GetNeighborhoodsCount(ServerContext* context, const PointRequest* pointRequest, NeighborhoodCounts* response) override {
+        // todo implement logic
+        response->set_name("Maxvorstadt");
+        response->set_count(1234);
         return Status::OK;
     }
 };
