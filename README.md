@@ -13,7 +13,7 @@
     - `sudo make install`
 ## Google S2 Geolocation Software
 
-## protoc compilation
+## manual protoc compilation
 - `protoc -I protos/ --grpc_out=. --plugin=protoc-gen-grpc=../grpc/bins/opt/grpc_cpp_plugin protos/geoanalysis.proto`
 - IF error occured that grpc plugin could not be found: `protoc-gen-grpc=../grpc/bins/opt/grpc_cpp_plugin` or `/usr/local/bin/grpc_cpp_plugin`
 - `protoc -I protos/ --cpp_out=. protos/geoanalysis.proto`

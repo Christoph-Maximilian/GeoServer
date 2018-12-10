@@ -22,13 +22,21 @@ using geo::geoanalyser;
 using geo::NeighborhoodCounts;
 using geo::Point;
 using geo::PointRequest;
+using geo::NeighborhoodCountsResponse;
 
 // Logic and data behind the server's behavior.
 class GreeterServiceImpl final : public geoanalyser::Service {
-    Status GetNeighborhoodsCount(ServerContext* context, const PointRequest* pointRequest, NeighborhoodCounts* response) override {
-        // todo implement logic
-        response->set_name("Maxvorstadt");
-        response->set_count(1234);
+    Status GetNeighborhoodsCount(ServerContext* context, const PointRequest* pointRequest, NeighborhoodCountsResponse* response) override {
+        // TODO implement logic
+
+        auto neighborhoodcount1 = response->add_neighborhoodcounts();
+        auto neighborhoodcount2 = response->add_neighborhoodcounts();
+
+        neighborhoodcount1->set_name("Maxvorstadt");
+        neighborhoodcount2->set_name("Ludwigsvorstadt");
+        neighborhoodcount1->set_count(1234);
+        neighborhoodcount2->set_count(321);
+
         return Status::OK;
     }
 };
