@@ -17,3 +17,10 @@
 - `protoc -I protos/ --grpc_out=. --plugin=protoc-gen-grpc=/usr/local/bin/grpc_cpp_plugin protos/test.proto`
 - IF error occured that grpc plugin could not be found: `protoc-gen-grpc=../grpc/bins/opt/grpc_cpp_plugin`
 - `protoc -I protos/ --cpp_out=. protos/test.proto`
+
+# Docker
+## Transferring Docker Images without registry:
+### Create Docker tar file:
+- `docker save --output latestversion-1.0.0.tar dockerregistry/latestversion:1.0.0`
+### Load Docker tar file:
+- `docker load --input latestversion-1.0.0.tar`
