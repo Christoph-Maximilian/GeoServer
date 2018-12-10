@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.12)
+cmake_minimum_required(VERSION 3.10)
 set(CMAKE_CXX_STANDARD 14)
 project(ServerGRPCTest)
 
@@ -29,5 +29,6 @@ set(hw_grpc_hdrs "${PROJECT_SOURCE_DIR}/test.grpc.pb.h")
 include_directories("${CMAKE_CURRENT_BINARY_DIR}")
 
 
-add_executable(ServerGRPCTest main.cpp greeter_server.cpp ${hw_proto_srcs}  ${hw_grpc_srcs})
+add_executable(ServerGRPCTest main.cpp greeter_server.cpp  ${hw_proto_srcs}  ${hw_grpc_srcs} )
+
 target_link_libraries(ServerGRPCTest   ${_GRPC_GRPCPP_UNSECURE} ${PROTOBUF_LIBRARIES})
