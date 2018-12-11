@@ -1,0 +1,12 @@
+FROM compileit
+
+WORKDIR /usr/src/ServerGRPCTest
+COPY . /usr/src/ServerGRPCTest
+
+# Generate gRPC protobuf files
+WORKDIR /usr/src/ServerGRPCTest
+RUN ./grpc_file_generation.sh
+
+# Make the application
+RUN mkdir build && cd build && cmake .. && make
+

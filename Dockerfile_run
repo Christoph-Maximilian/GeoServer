@@ -1,0 +1,17 @@
+FROM gcc:7.3
+
+
+
+# gRPC Dependencies
+RUN set -ex; \
+	apt-get update; \
+	apt-get install -y --no-install-recommends build-essential autoconf libtool pkg-config\ 
+	libgflags-dev libgtest-dev clang libc++-dev git;
+
+# S2 Dependencies
+RUN set -ex; \
+	apt-get update; \
+	apt-get install -y --no-install-recommends cmake libgoogle-glog-dev libssl-dev;
+
+
+

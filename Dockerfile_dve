@@ -1,0 +1,14 @@
+FROM gcc7.3-run
+
+WORKDIR /usr/src/
+RUN git clone -b $(curl -L https://grpc.io/release) https://github.com/grpc/grpc
+WORKDIR /usr/src/grpc
+RUN git submodule update --init
+
+#make gRPC
+RUN make
+RUN make install
+
+#install protoc
+WORKDIR /usr/src/grpc/third_party/protobuf
+RUN make install
