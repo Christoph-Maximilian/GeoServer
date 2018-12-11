@@ -1,18 +1,15 @@
 //
-// Created by christoph on 10.12.18.
+// Created by Christoph Anneser on 10.12.18.
 //
 
 #include <iostream>
 #include <memory>
 #include <string>
-
 #include <grpcpp/grpcpp.h>
-
-#ifdef BAZEL_BUILD
-#include "examples/protos/helloworld.grpc.pb.h"
-#else
 #include "geoanalysis.grpc.pb.h"
-#endif
+#include <s2/s2contains_point_query.h>
+#include <s2/s2latlng.h>
+#include "data.h"
 
 using grpc::Server;
 using grpc::ServerBuilder;
@@ -29,6 +26,9 @@ class GreeterServiceImpl final : public geoanalyser::Service {
     Status GetNeighborhoodsCount(ServerContext* context, const PointRequest* pointRequest, NeighborhoodCountsResponse* response) override {
         // TODO implement logic
 
+
+
+
         auto neighborhoodcount1 = response->add_neighborhoodcounts();
         auto neighborhoodcount2 = response->add_neighborhoodcounts();
 
@@ -42,7 +42,10 @@ class GreeterServiceImpl final : public geoanalyser::Service {
 };
 
 void RunServer() {
-    std::string server_address("192.168.52.71:50051");
+    auto polygon_map_ptr = data::parse_neighborhoods("../data/neighborhoods_munich.csv") ;
+    std::cout << "#polyongs: " << std::to_string(polygon_map_ptr->size()) << std::endl;
+
+    std::string server_address("0.0.0.0:50051");
     GreeterServiceImpl service;
 
     ServerBuilder builder;
