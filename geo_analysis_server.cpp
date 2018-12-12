@@ -63,7 +63,7 @@ void RunServer() {
     S2ContainsPointQueryOptions options(S2VertexModel::CLOSED);
 
     auto query = MakeS2ContainsPointQuery(&index, options);
-    S2Point point = S2LatLng::FromDegrees(40.707661, -73.914855).Normalized().ToPoint();
+    S2Point point = S2LatLng::FromDegrees(48.145959, 11.562222).Normalized().ToPoint();
     uint32 hit_counter(0);
     for (S2Shape* shape : query.GetContainingShapes(point)) {
 

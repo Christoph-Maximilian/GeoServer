@@ -52,6 +52,15 @@ void data::build_shape_index(MutableS2ShapeIndex* index, std::vector<std::unique
 
     //add loops to the index - transfers the ownership of the loops to the index!!!
     for (size_t i  = 0; i < loops->size(); i++) {
+        if (!(*loops)[i]->IsValid()) {
+            std::cerr << "This loop is not valid!" << std::endl;
+        }
+        if(!(*loops)[i]->IsNormalized()) {
+            // Normalize loop, otherwise the result is wrong.
+            (*loops)[i]->Normalize();
+            std::cerr << "It seems that loop " << std::to_string(i) << " is not normalized" << std::endl;
+        }
+
         S2Loop* loop_ptr = (*loops)[i].release();
         index->Add(std::make_unique<S2Loop::Shape>(loop_ptr));
     }
