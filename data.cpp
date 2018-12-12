@@ -33,9 +33,9 @@ void data::parse_neighborhoods(std::string file, std::vector<std::string>* neigh
             line.erase(0, pos + delimiter.length());
             points.emplace_back(parse_point(point));
         }
+        //points.emplace_back(parse_point(line));
         // TODO: remove last point since it is the same es the first one ?
-        points.pop_back();
-
+        std::reverse(points.begin(), points.end());
         neighborhoods->push_back(neighborhood_name);
         auto loop = std::make_unique<S2Loop>(points);
         loops->push_back(std::move(loop));

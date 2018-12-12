@@ -48,7 +48,7 @@ void RunServer() {
     std::vector<std::string> neighborhood_names;
     std::vector<std::unique_ptr<S2Loop>> loops;
 
-    data::parse_neighborhoods("../data/neighborhoods_munich2.csv", &neighborhood_names, &loops);
+    data::parse_neighborhoods("../data/muc.csv", &neighborhood_names, &loops);
     std::vector<u_int32_t > hit_counts(neighborhood_names.size());
 
     std::cout << "#polyongs names: " << std::to_string(neighborhood_names.size()) << std::endl;
@@ -63,10 +63,12 @@ void RunServer() {
     S2ContainsPointQueryOptions options(S2VertexModel::CLOSED);
 
     auto query = MakeS2ContainsPointQuery(&index, options);
-    S2LatLng lat_lng = S2LatLng::FromDegrees(48.145053, 11.561629);
-    for (S2Shape* shape : query.GetContainingShapes(lat_lng.ToPoint())) {
+    S2Point point = S2LatLng::FromDegrees(40.707661, -73.914855).Normalized().ToPoint();
+    uint32 hit_counter(0);
+    for (S2Shape* shape : query.GetContainingShapes(point)) {
 
         hit_counts[shape->id()]++;
+        hit_counter++;
     }
 
     std::string server_address("0.0.0.0:50051");
