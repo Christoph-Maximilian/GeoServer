@@ -9,7 +9,7 @@
 #include "s2/s2loop.h"
 
 /* This function parses the neighborhoods and returns a unique pointer to the map that comprises the results. */
-std::unique_ptr<regionMapType> data::parse_neighborhoods(std::string file){
+void data::parse_neighborhoods(std::string file, std::vector<std::string>* neighborhoods, std::vector<std::unique_ptr<S2Loop>>* loops){
     auto map_ptr = std::make_unique<regionMapType>();
     std::string delimiter(";");
     std::string point_delimiter(",");
@@ -35,10 +35,28 @@ std::unique_ptr<regionMapType> data::parse_neighborhoods(std::string file){
         }
         // TODO: remove last point since it is the same es the first one ?
         // points.pop_back();
+
+        neighborhoods->push_back(neighborhood_name);
         auto loop = std::make_unique<S2Loop>(points);
-        map_ptr->insert(std::pair<std::string, std::unique_ptr<S2Loop>>(neighborhood_name, std::move(loop)));
+        loops->push_back(std::move(loop));
     }
-    return std::move(map_ptr);
+}
+
+
+void data::build_shape_index(MutableS2ShapeIndex* index, std::vector<std::unique_ptr<S2Loop>> loops){
+    MutableS2ShapeIndex::Options options;
+
+    //define the granularity here, smaller number results in faster queries and higher space consumption
+    options.set_max_edges_per_cell(10);
+    index->Init(options);
+
+    //add loops to the index - transfers the ownership of the loops to the index!!!
+    for (size_t i  = 0; i < loops.size(); i++) {
+        S2Loop* loop_ptr = loops[i].release();
+        index->Add(std::make_unique<S2Loop::Shape>(loop_ptr));
+    }
+
+    index->ForceBuild();
 }
 
 
