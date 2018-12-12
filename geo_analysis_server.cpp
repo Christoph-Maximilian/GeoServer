@@ -26,22 +26,48 @@ using geo::NeighborhoodCountsResponse;
 
 // Logic and data behind the server's behavior.
 class GreeterServiceImpl final : public geoanalyser::Service {
+
+public:
+    GreeterServiceImpl(std::vector<std::string> neighborhood_names, MutableS2ShapeIndex* index_ptr ){
+        this->_neighborhood_names = std::move(neighborhood_names);
+        this->_index_ptr = index_ptr;
+    }
+
     Status GetNeighborhoodsCount(ServerContext* context, const PointRequest* pointRequest, NeighborhoodCountsResponse* response) override {
-        // TODO implement logic
+        std::vector<S2Point > points;
+        for (auto it = pointRequest->points().begin(); it != pointRequest->points().end(); it++) {
+            auto point = S2LatLng::FromDegrees(it->latitude(), it->longitude()).Normalized().ToPoint();
+            points.emplace_back(point);
+        }
 
+        S2ContainsPointQueryOptions options(S2VertexModel::CLOSED);
+        auto query = MakeS2ContainsPointQuery(_index_ptr, options);
 
+        uint32 hit_counter(0);
+        std::vector<uint32 > counts(_neighborhood_names.size(), 0);
+        for (auto point : points) {
+            for (S2Shape* shape : query.GetContainingShapes(point)) {
+                counts[shape->id()]++;
+                hit_counter++;
+            }
+        }
 
+        std::cout << "queried points: " << std::to_string(points.size()) << std::endl;
+        std::cout << "hits: " << std::to_string(hit_counter) << std::endl;
 
-        auto neighborhoodcount1 = response->add_neighborhoodcounts();
-        auto neighborhoodcount2 = response->add_neighborhoodcounts();
-
-        neighborhoodcount1->set_name("Maxvorstadt");
-        neighborhoodcount2->set_name("Ludwigsvorstadt");
-        neighborhoodcount1->set_count(1234);
-        neighborhoodcount2->set_count(321);
+        // RESPONSE
+        for (u_int16_t i = 0; i < counts.size(); i++) {
+            auto neighborhood_count = response->add_neighborhoodcounts();
+            neighborhood_count->set_name(_neighborhood_names[i]);
+            neighborhood_count->set_count(counts[i]);
+        }
 
         return Status::OK;
     }
+
+private:
+    std::vector<std::string> _neighborhood_names;
+    MutableS2ShapeIndex* _index_ptr;
 };
 
 void RunServer() {
@@ -57,22 +83,13 @@ void RunServer() {
     MutableS2ShapeIndex index;
     data::build_shape_index(&index, &loops);
 
+    std::cout << "Shape Index: uses " << std::to_string(index.SpaceUsed()/1000) << "kB.";
+
     // loops is now invalidated.
     loops.clear(); loops.shrink_to_fit();
 
-    S2ContainsPointQueryOptions options(S2VertexModel::CLOSED);
-
-    auto query = MakeS2ContainsPointQuery(&index, options);
-    S2Point point = S2LatLng::FromDegrees(48.145959, 11.562222).Normalized().ToPoint();
-    uint32 hit_counter(0);
-    for (S2Shape* shape : query.GetContainingShapes(point)) {
-
-        hit_counts[shape->id()]++;
-        hit_counter++;
-    }
-
     std::string server_address("0.0.0.0:50051");
-    GreeterServiceImpl service;
+    GreeterServiceImpl service(neighborhood_names, &index);
 
     ServerBuilder builder;
     // Listen on the given address without any authentication mechanism.
