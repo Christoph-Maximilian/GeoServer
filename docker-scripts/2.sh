@@ -1,2 +1,1 @@
-sudo docker image build  -t dev:dev  -f Dockerfile_dve .
-
+sudo docker image build --rm -t build:build  -f Dockerfile_2 .

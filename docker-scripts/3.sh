@@ -1,2 +1,2 @@
-sudo docker image build  --rm -t dev:ved  -f Dockerfile_3 .
+sudo docker image build  --rm -t dev:dev  -f Dockerfile_3 .
 

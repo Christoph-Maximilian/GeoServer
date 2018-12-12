@@ -1,5 +1,6 @@
-FROM gcc7.3-run
+FROM run:run
 
+#clone gRPC
 WORKDIR /usr/src/
 RUN git clone -b $(curl -L https://grpc.io/release) https://github.com/grpc/grpc
 WORKDIR /usr/src/grpc
@@ -13,6 +14,6 @@ RUN make install
 WORKDIR /usr/src/grpc/third_party/protobuf
 RUN make install
 
-
+#clone S2
 WORKDIR /usr/src/
 RUN git clone https://github.com/google/s2geometry.git

@@ -1,7 +1,5 @@
 FROM gcc:7.3
 
-
-
 # gRPC Dependencies
 RUN set -ex; \
 	apt-get update; \

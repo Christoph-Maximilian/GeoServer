@@ -1,4 +1,4 @@
-FROM compileit
+FROM build:build
 
 WORKDIR /usr/src/ServerGRPCTest
 COPY . /usr/src/ServerGRPCTest
@@ -9,4 +9,3 @@ RUN ./grpc_file_generation.sh
 
 # Make the application
 RUN mkdir build && cd build && cmake .. && make
-

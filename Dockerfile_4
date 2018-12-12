@@ -1,0 +1,5 @@
+FROM dev:dev
+
+# run the executable
+WORKDIR /usr/src/ServerGRPCTest/build
+CMD ["./ServerGRPCTest"]
