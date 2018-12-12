@@ -10,6 +10,9 @@
 #include <s2/s2contains_point_query.h>
 #include <s2/s2latlng.h>
 #include "data.h"
+#include "s2/s2edge_crosser.h"
+#include "s2/s2shape_index.h"
+#include "s2/s2shapeutil_shape_edge.h"
 
 using grpc::Server;
 using grpc::ServerBuilder;
@@ -44,19 +47,28 @@ class GreeterServiceImpl final : public geoanalyser::Service {
 void RunServer() {
     std::vector<std::string> neighborhood_names;
     std::vector<std::unique_ptr<S2Loop>> loops;
-    data::parse_neighborhoods("../data/neighborhoods_munich.csv", &neighborhood_names, &loops) ;
+
+    data::parse_neighborhoods("../data/neighborhoods_munich2.csv", &neighborhood_names, &loops);
+    std::vector<u_int32_t > hit_counts(neighborhood_names.size());
+
     std::cout << "#polyongs names: " << std::to_string(neighborhood_names.size()) << std::endl;
     std::cout << "#polyongs loops: " << std::to_string(loops.size()) << std::endl;
 
-    /*std::vector<std::unique_ptr<S2Loop>> loops;
+    MutableS2ShapeIndex index;
+    data::build_shape_index(&index, &loops);
 
-    for(auto it = polygon_map_ptr->begin(); it != polygon_map_ptr->end(); it++){
-        loops.push_back(std::move(it->second));
+    // loops is now invalidated.
+    loops.clear(); loops.shrink_to_fit();
+
+    S2ContainsPointQueryOptions options(S2VertexModel::CLOSED);
+
+    auto query = MakeS2ContainsPointQuery(&index, options);
+    S2LatLng lat_lng = S2LatLng::FromDegrees(48.145053, 11.561629);
+    for (S2Shape* shape : query.GetContainingShapes(lat_lng.ToPoint())) {
+
+        hit_counts[shape->id()]++;
     }
 
-    MutableS2ShapeIndex index;
-    data::build_shape_index(&index,loops);
-*/
     std::string server_address("0.0.0.0:50051");
     GreeterServiceImpl service;
 

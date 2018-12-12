@@ -16,7 +16,7 @@ public:
     static void parse_neighborhoods(std::string file,std::vector<std::string>* neighborhoods, std::vector<std::unique_ptr<S2Loop>>* loops);
 
     //given the loops, build and return a shape index
-    static void build_shape_index(MutableS2ShapeIndex* index, std::vector<std::unique_ptr<S2Loop>> loops);
+    static void build_shape_index(MutableS2ShapeIndex* index, std::vector<std::unique_ptr<S2Loop>>* loops);
 
 private:
     static S2Point parse_point(std::string& point);

@@ -34,7 +34,7 @@ void data::parse_neighborhoods(std::string file, std::vector<std::string>* neigh
             points.emplace_back(parse_point(point));
         }
         // TODO: remove last point since it is the same es the first one ?
-        // points.pop_back();
+        points.pop_back();
 
         neighborhoods->push_back(neighborhood_name);
         auto loop = std::make_unique<S2Loop>(points);
@@ -43,16 +43,16 @@ void data::parse_neighborhoods(std::string file, std::vector<std::string>* neigh
 }
 
 
-void data::build_shape_index(MutableS2ShapeIndex* index, std::vector<std::unique_ptr<S2Loop>> loops){
+void data::build_shape_index(MutableS2ShapeIndex* index, std::vector<std::unique_ptr<S2Loop>>* loops){
     MutableS2ShapeIndex::Options options;
 
     //define the granularity here, smaller number results in faster queries and higher space consumption
-    options.set_max_edges_per_cell(10);
+    options.set_max_edges_per_cell(1);
     index->Init(options);
 
     //add loops to the index - transfers the ownership of the loops to the index!!!
-    for (size_t i  = 0; i < loops.size(); i++) {
-        S2Loop* loop_ptr = loops[i].release();
+    for (size_t i  = 0; i < loops->size(); i++) {
+        S2Loop* loop_ptr = (*loops)[i].release();
         index->Add(std::make_unique<S2Loop::Shape>(loop_ptr));
     }
 
