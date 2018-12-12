@@ -19,6 +19,26 @@
 - `protoc -I protos/ --cpp_out=. protos/geoanalysis.proto`
 
 # Docker
+For now, build the docker image on your own machine.
+## Build the docker image locally
+### Prerequisite
+- Install `docker` on your machine:
+    - Debian: https://docs.docker.com/install/linux/docker-ce/ubuntu/#install-docker-ce
+    - MAC: https://docs.docker.com/docker-for-mac/install/
+    
+- Go to the root folder of this project (`{PATH}/GeoService`)and execute
+    - $ `./create_docker_container.sh`
+- This downloads a fresh linux image containing the GNU compilers.
+- Then the gRPC and S2 dependencies are downloaded.
+- gRPC and `protoc` are installed.
+- Finally, this project is copied into the container and gets compiled.
+- The resulting container can be executed as follows:
+    - `sudo docker run -p 50051:50051 executable:0.1 `
+    - This should produce the following output:
+    _Shape Index: uses 722kB.Server listening on 0.0.0.0:50051_
+
+
+## _Get existing Docker image (tba)_ 
 Instead of building all stuff on your local machine, you can download a docker image
     - tba.
 ## Transferring Docker Images without registry:
