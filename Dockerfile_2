@@ -12,3 +12,7 @@ RUN make install
 #install protoc
 WORKDIR /usr/src/grpc/third_party/protobuf
 RUN make install
+
+
+WORKDIR /usr/src/
+RUN git clone https://github.com/google/s2geometry.git
