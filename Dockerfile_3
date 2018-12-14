@@ -7,5 +7,5 @@ COPY . /usr/src/ServerGRPCTest
 WORKDIR /usr/src/ServerGRPCTest
 RUN ./grpc_file_generation.sh
 
-# Make the application
-RUN mkdir build && cd build && cmake .. && make
+# Make the application - build type Release
+RUN mkdir build && cd build && cmake -DCMAKE_BUILD_TYPE=Release .. && make
