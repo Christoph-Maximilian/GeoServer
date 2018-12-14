@@ -19,7 +19,8 @@
 - `protoc -I protos/ --cpp_out=. protos/geoanalysis.proto`
 
 # Docker
-For now, build the docker image on your own machine.
+You have the choice - build the docker image on your own machine or download an existing image. Last is preferred since 
+it is way faster than building it on your own machine.
 ## Build the docker image locally
 ### Prerequisite
 - Install `docker` on your machine:
@@ -38,11 +39,21 @@ For now, build the docker image on your own machine.
     _Shape Index: uses 722kB.Server listening on 0.0.0.0:50051_
 
 
-## _Get existing Docker image (tba)_ 
+## Get existing Docker image [preferred!]
 Instead of building all stuff on your local machine, you can download a docker image
-    - tba.
-## Transferring Docker Images without registry:
+- Download `GeoService.zip` - link is provided in our **Slack Channel**.
+- Unzip the file to `GeoService.tar`
+- Load the image that is saved in `GeoService.tar` into your own, local Docker registry:
+    - `docker load --input GeoService.tar`
+- You can now mount the loaded Docker image in a fresh container:
+    - `sudo docker run -p 50051:50051 executable:0.1 `
+    
+
 ### Create Docker tar file:
-- `docker save --output latestversion-1.0.0.tar dockerregistry/latestversion:1.0.0`
-### Load Docker tar file:
-- `docker load --input latestversion-1.0.0.tar`
+- `docker save --output GeoService.tar dockerregistry/executable:0.1`
+
+
+
+# Security
+if this should be necessary one day (e.g. host the service online), then refer to 
+    - https://github.com/grpc/grpc/issues/9593
