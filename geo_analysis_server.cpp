@@ -7,6 +7,7 @@
 #include <string>
 #include <grpcpp/grpcpp.h>
 #include "geoanalysis.grpc.pb.h"
+#include "geoanalysis.pb.h"
 #include <s2/s2contains_point_query.h>
 #include <s2/s2latlng.h>
 #include "data.h"
@@ -23,14 +24,55 @@ using geo::NeighborhoodCounts;
 using geo::Point;
 using geo::PointRequest;
 using geo::NeighborhoodCountsResponse;
+using geo::UserLocationsRequest;
+using geo::UsersResponse;
 
 // Logic and data behind the server's behavior.
 class GreeterServiceImpl final : public geoanalyser::Service {
 
 public:
     GreeterServiceImpl(std::vector<std::string> neighborhood_names, MutableS2ShapeIndex* index_ptr ){
-        this->_neighborhood_names = std::move(neighborhood_names);
-        this->_index_ptr = index_ptr;
+        _neighborhood_names = std::move(neighborhood_names);
+        _index_ptr = index_ptr;
+    }
+
+    Status SetLastUserLocations(::grpc::ServerContext* context, const ::geo::UserLocationsRequest* request, ::geo::StatusResponse* response) override {
+        // copy user ids into private field _user_ids
+        for (const auto &id : request->userid()) {
+            _user_ids.emplace_back(id);
+        }
+
+        // convert longitude latitude points to S2Points and store them in private field _user_locations
+        for (const auto& point: request->location()) {
+            auto s2point = S2LatLng::FromDegrees(point.latitude(), point.longitude()).Normalized().ToPoint();
+            S2CellId cell(s2point);
+            _user_locations.emplace_back(cell);
+        }
+
+
+
+        // IDEA: store all users in a b-tree, where the key is their point.
+
+
+        /* Could be useful:
+
+        CellIDsType::const_iterator i
+
+        if (i != cell_ids.end() && i->first.range_min() <= cell_id) {
+            return i->second;
+        }
+        if (i != cell_ids.begin() && (--i)->first.range_max() >= cell_id) {
+            return i->second;
+        }
+
+
+         region coverer:
+          S2RegionCoverer::Options options;
+          options.set_max_cells(max_cells);
+          options.set_max_level(max_level);
+          S2RegionCoverer region_coverer(options);
+          S2CellUnion union = region_coverer.GetCovering(loop);
+        */
     }
 
     Status GetNeighborhoodsCount(ServerContext* context, const PointRequest* pointRequest, NeighborhoodCountsResponse* response) override {
@@ -68,6 +110,8 @@ public:
 private:
     std::vector<std::string> _neighborhood_names;
     MutableS2ShapeIndex* _index_ptr;
+    std::vector<S2CellId> _user_locations;
+    std::vector<std::string> _user_ids;
 };
 
 void RunServer() {
