@@ -26,34 +26,48 @@ using geo::PointRequest;
 using geo::NeighborhoodCountsResponse;
 using geo::UserLocationsRequest;
 using geo::UsersResponse;
+using geo::PolgonRequest;
 
 // Logic and data behind the server's behavior.
 class GreeterServiceImpl final : public geoanalyser::Service {
+    using PositionUserIdType = std::pair<S2CellId, std::string>;
 
 public:
-    GreeterServiceImpl(std::vector<std::string> neighborhood_names, MutableS2ShapeIndex* index_ptr ){
+    GreeterServiceImpl(std::vector<std::string> neighborhood_names, MutableS2ShapeIndex *index_ptr) {
         _neighborhood_names = std::move(neighborhood_names);
         _index_ptr = index_ptr;
     }
 
-    Status SetLastUserLocations(::grpc::ServerContext* context, const ::geo::UserLocationsRequest* request, ::geo::StatusResponse* response) override {
+    Status SetLastUserLocations(::grpc::ServerContext *context, const ::geo::UserLocationsRequest *request,
+                                ::geo::StatusResponse *response) override {
+        assert(request->location().size() == request->userid().size());
         // copy user ids into private field _user_ids
-        for (const auto &id : request->userid()) {
-            _user_ids.emplace_back(id);
-        }
-
-        // convert longitude latitude points to S2Points and store them in private field _user_locations
-        for (const auto& point: request->location()) {
-            auto s2point = S2LatLng::FromDegrees(point.latitude(), point.longitude()).Normalized().ToPoint();
+        for (auto i = 0; i < request->location().size(); i++) {
+            auto s2point = S2LatLng::FromDegrees(request->location()[i].latitude(),
+                                                 request->location()[i].longitude()).Normalized().ToPoint();
             S2CellId cell(s2point);
-            _user_locations.emplace_back(cell);
+            _user_location_ids.emplace_back(std::make_pair(cell, request->userid()[i]));
         }
 
+        //sort user locations
+        std::sort(_user_location_ids.begin(), _user_location_ids.end(),
+                  [](const PositionUserIdType &lhs, const PositionUserIdType &rhs) {
+                      return lhs.first.id() < rhs.first.id();
+                  });
 
+        return Status::OK;
+    }
+
+    Status GetUsersInPolygon(ServerContext *context, const PolgonRequest *request, UsersResponse *response) override {
+        /*
+         * 1. build a loop of the request
+         * 2. create region covering of this loop -> cell union
+         * 3. get min and max cell ids of the cell union
+         * 4. binary search -> range from appropriate cells
+         * 5. exact check necessary?
+         */
 
         // IDEA: store all users in a b-tree, where the key is their point.
-
-
         /* Could be useful:
 
         CellIDsType::const_iterator i
@@ -73,10 +87,12 @@ public:
           S2RegionCoverer region_coverer(options);
           S2CellUnion union = region_coverer.GetCovering(loop);
         */
-    }
+    };
 
-    Status GetNeighborhoodsCount(ServerContext* context, const PointRequest* pointRequest, NeighborhoodCountsResponse* response) override {
-        std::vector<S2Point > points;
+
+    Status GetNeighborhoodsCount(ServerContext *context, const PointRequest *pointRequest,
+                                 NeighborhoodCountsResponse *response) override {
+        std::vector<S2Point> points;
         for (auto it = pointRequest->points().begin(); it != pointRequest->points().end(); it++) {
             auto point = S2LatLng::FromDegrees(it->latitude(), it->longitude()).Normalized().ToPoint();
             points.emplace_back(point);
@@ -86,9 +102,9 @@ public:
         auto query = MakeS2ContainsPointQuery(_index_ptr, options);
 
         uint32 hit_counter(0);
-        std::vector<uint32 > counts(_neighborhood_names.size(), 0);
+        std::vector<uint32> counts(_neighborhood_names.size(), 0);
         for (auto point : points) {
-            for (S2Shape* shape : query.GetContainingShapes(point)) {
+            for (S2Shape *shape : query.GetContainingShapes(point)) {
                 counts[shape->id()]++;
                 hit_counter++;
             }
@@ -109,9 +125,8 @@ public:
 
 private:
     std::vector<std::string> _neighborhood_names;
-    MutableS2ShapeIndex* _index_ptr;
-    std::vector<S2CellId> _user_locations;
-    std::vector<std::string> _user_ids;
+    MutableS2ShapeIndex *_index_ptr;
+    std::vector<std::pair<S2CellId, std::string>> _user_location_ids;
 };
 
 void RunServer() {
@@ -119,7 +134,7 @@ void RunServer() {
     std::vector<std::unique_ptr<S2Loop>> loops;
 
     data::parse_neighborhoods("../data/muc.csv", &neighborhood_names, &loops);
-    std::vector<u_int32_t > hit_counts(neighborhood_names.size());
+    std::vector<u_int32_t> hit_counts(neighborhood_names.size());
 
     std::cout << "#polyongs names: " << std::to_string(neighborhood_names.size()) << std::endl;
     std::cout << "#polyongs loops: " << std::to_string(loops.size()) << std::endl;
@@ -127,10 +142,11 @@ void RunServer() {
     MutableS2ShapeIndex index;
     data::build_shape_index(&index, &loops);
 
-    std::cout << "Shape Index: uses " << std::to_string(index.SpaceUsed()/1000) << "kB.";
+    std::cout << "Shape Index: uses " << std::to_string(index.SpaceUsed() / 1000) << "kB.";
 
     // loops is now invalidated.
-    loops.clear(); loops.shrink_to_fit();
+    loops.clear();
+    loops.shrink_to_fit();
 
     std::string server_address("0.0.0.0:50051");
     GreeterServiceImpl service(neighborhood_names, &index);
@@ -150,7 +166,7 @@ void RunServer() {
     server->Wait();
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
     RunServer();
     return 0;
 }
