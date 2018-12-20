@@ -2,6 +2,9 @@
 // Created by Christoph Anneser on 10.12.18.
 //
 
+//uncomment for debug output
+//#define __DEBUG
+
 #include <iostream>
 #include <memory>
 #include <string>
@@ -10,6 +13,8 @@
 #include "geoanalysis.pb.h"
 #include <s2/s2contains_point_query.h>
 #include <s2/s2latlng.h>
+#include <s2/s2region_coverer.h>
+#include <s2/s2cell_union.h>
 #include "data.h"
 #include "s2/s2edge_crosser.h"
 #include "s2/s2shape_index.h"
@@ -27,6 +32,7 @@ using geo::NeighborhoodCountsResponse;
 using geo::UserLocationsRequest;
 using geo::UsersResponse;
 using geo::PolgonRequest;
+using geo::StatusResponse;
 
 // Logic and data behind the server's behavior.
 class GreeterServiceImpl final : public geoanalyser::Service {
@@ -40,7 +46,12 @@ public:
 
     Status SetLastUserLocations(::grpc::ServerContext *context, const ::geo::UserLocationsRequest *request,
                                 ::geo::StatusResponse *response) override {
-        assert(request->location().size() == request->userid().size());
+        if (request->location().size() != request->userid().size()) {
+            return Status::CANCELLED;
+        };
+
+        _user_location_ids.clear();
+
         // copy user ids into private field _user_ids
         for (auto i = 0; i < request->location().size(); i++) {
             auto s2point = S2LatLng::FromDegrees(request->location()[i].latitude(),
@@ -55,38 +66,66 @@ public:
                       return lhs.first.id() < rhs.first.id();
                   });
 
+        response->set_status("Latest locations set");
         return Status::OK;
     }
 
     Status GetUsersInPolygon(ServerContext *context, const PolgonRequest *request, UsersResponse *response) override {
-        /*
-         * 1. build a loop of the request
-         * 2. create region covering of this loop -> cell union
-         * 3. get min and max cell ids of the cell union
-         * 4. binary search -> range from appropriate cells
-         * 5. exact check necessary?
-         */
-
-        // IDEA: store all users in a b-tree, where the key is their point.
-        /* Could be useful:
-
-        CellIDsType::const_iterator i
-
-        if (i != cell_ids.end() && i->first.range_min() <= cell_id) {
-            return i->second;
-        }
-        if (i != cell_ids.begin() && (--i)->first.range_max() >= cell_id) {
-            return i->second;
+        // 1. build a loop of the request's points
+        std::vector<S2Point> points;
+        for (const auto &point : request->vertices()) {
+            auto s2point = S2LatLng::FromDegrees(point.latitude(), point.longitude()).Normalized().ToPoint();
+            points.emplace_back(s2point);
         }
 
+        S2Loop loop(points);
 
-         region coverer:
-          S2RegionCoverer::Options options;
-          options.set_max_cells(max_cells);
-          options.set_max_level(max_level);
-          S2RegionCoverer region_coverer(options);
-          S2CellUnion union = region_coverer.GetCovering(loop);
-        */
+        // 2. create region covering of this loop -> cell union
+        S2RegionCoverer::Options options;
+        options.set_max_cells(200);
+        options.set_max_level(30);
+        S2RegionCoverer region_coverer(options);
+        S2CellUnion s2cell_union = region_coverer.GetCovering(loop);
+
+        assert (!s2cell_union.empty());
+
+        // 3. get min and max cell ids of the cell union
+        S2CellId min(s2cell_union[0].id()), max(s2cell_union[0].id());
+        for (const auto &cell: s2cell_union) {
+            if (min > cell.range_min()) {
+                min = cell.range_min();
+            }
+            if (max < cell.range_max()) {
+                max = cell.range_max();
+            }
+        }
+
+#ifdef __DEBUG
+        std::cout << "#cells in covering: " << std::to_string(s2cell_union.size()) << std::endl;
+        std::cout << "min cell: " << std::to_string(min.id()) << std::endl;
+        std::cout << "max cell: " << std::to_string(max.id()) << std::endl;
+
+        for (const auto &entry: _user_location_ids) {
+            std::cout << "\tuser cell: " << std::to_string(entry.first.id()) << std::endl;
+        }
+#endif
+
+        // 4. binary search -> range from appropriate cells
+        auto comparator = [](const PositionUserIdType &p1, const S2CellId v) {
+            return p1.first.id() < v.id();
+        };
+
+        auto lower_it = std::lower_bound(_user_location_ids.begin(), _user_location_ids.end(), min, comparator);
+        auto upper_it = std::lower_bound(_user_location_ids.begin(), _user_location_ids.end(), max, comparator);
+
+        for (; lower_it != upper_it; lower_it++) {
+            // exact check if point is in polygon, after 20-30 calls the loop builds its own shape index
+            // for faster containment check
+            if (loop.Contains(lower_it->first.ToPoint())) {
+                response->add_userid(lower_it->second);
+            }
+        }
+        return Status::OK;
     };
 
 
@@ -124,6 +163,7 @@ public:
     }
 
 private:
+
     std::vector<std::string> _neighborhood_names;
     MutableS2ShapeIndex *_index_ptr;
     std::vector<std::pair<S2CellId, std::string>> _user_location_ids;
@@ -136,13 +176,15 @@ void RunServer() {
     data::parse_neighborhoods("../data/muc.csv", &neighborhood_names, &loops);
     std::vector<u_int32_t> hit_counts(neighborhood_names.size());
 
+#ifdef __DEBUG
     std::cout << "#polyongs names: " << std::to_string(neighborhood_names.size()) << std::endl;
     std::cout << "#polyongs loops: " << std::to_string(loops.size()) << std::endl;
+#endif
 
     MutableS2ShapeIndex index;
     data::build_shape_index(&index, &loops);
 
-    std::cout << "Shape Index: uses " << std::to_string(index.SpaceUsed() / 1000) << "kB.";
+    std::cout << "Shape Index: uses " << std::to_string(index.SpaceUsed() / 1000) << "kB." << std::endl;
 
     // loops is now invalidated.
     loops.clear();
