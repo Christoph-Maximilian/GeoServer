@@ -3,7 +3,7 @@
 //
 
 //uncomment for debug output
-#define __DEBUG
+//#define __DEBUG
 
 #include <iostream>
 #include <memory>
@@ -118,10 +118,7 @@ public:
         auto lower_it = std::lower_bound(_user_location_ids.begin(), _user_location_ids.end(), min, comparator);
         auto upper_it = std::lower_bound(_user_location_ids.begin(), _user_location_ids.end(), max, comparator);
 
-
-#ifdef __DEBUG
         std::cout << "#elements found in binary search: " << std::to_string(std::distance(lower_it, upper_it)) << std::endl;
-#endif
 
         for (; lower_it != upper_it; lower_it++) {
             // 5. exact check if point is in polygon, after 20-30 calls the loop builds its own shape index
