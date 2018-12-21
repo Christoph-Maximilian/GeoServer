@@ -40,6 +40,6 @@ RUN ./grpc_file_generation.sh
 # Make the application - build type Release
 RUN mkdir build && cd build && cmake -DCMAKE_BUILD_TYPE=Release .. && make
 
-# run the executable
+# Run the executable
 WORKDIR /usr/src/ServerGRPCTest/build
 ENTRYPOINT ["./ServerGRPCTest"]
