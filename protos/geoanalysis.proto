@@ -4,6 +4,31 @@ package geo;
 
 service geoanalyser {
     rpc GetNeighborhoodsCount(PointRequest) returns (NeighborhoodCountsResponse);
+    rpc SetLastUserLocations(UserLocationsRequest) returns (StatusResponse);
+    rpc GetUsersInPolygon(PolgonRequest) returns (UsersResponse);
+}
+
+message UsersResponse {
+    repeated UserLocation userLocation = 1;
+}
+
+message UserLocation {
+    string userId = 1;
+    Point location = 2;
+}
+
+message PolgonRequest {
+    repeated Point vertices = 1;
+}
+
+// contains two lists with user ids and the users locations
+message UserLocationsRequest {
+    repeated string userId = 1;
+    repeated Point location = 2;
+}
+
+message StatusResponse {
+    string status = 1;
 }
 
 //enumeration of single points

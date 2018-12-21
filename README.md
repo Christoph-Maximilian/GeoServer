@@ -1,3 +1,4 @@
+[![](https://dockerbuildbadges.quelltext.eu/status.svg?organization=christophmaximilian&repository=geoservice)]
 # Installation: Dependencies
 ## gRPC
 - Before installing, make sure all previous _Protobuf_ versions are removed

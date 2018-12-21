@@ -9,15 +9,15 @@
 #include "s2/s2loop.h"
 
 /* This function parses the neighborhoods and returns a unique pointer to the map that comprises the results. */
-void data::parse_neighborhoods(std::string file, std::vector<std::string>* neighborhoods, std::vector<std::unique_ptr<S2Loop>>* loops){
+void data::parse_neighborhoods(std::string file, std::vector<std::string> *neighborhoods,
+                               std::vector<std::unique_ptr<S2Loop>> *loops) {
     auto map_ptr = std::make_unique<regionMapType>();
     std::string delimiter(";");
     std::string point_delimiter(",");
     std::ifstream infile(file);
     std::string line;
 
-    while (std::getline(infile, line))
-    {
+    while (std::getline(infile, line)) {
         size_t pos = 0;
         std::string neighborhood_name;
         pos = line.find(delimiter);
@@ -43,7 +43,7 @@ void data::parse_neighborhoods(std::string file, std::vector<std::string>* neigh
 }
 
 
-void data::build_shape_index(MutableS2ShapeIndex* index, std::vector<std::unique_ptr<S2Loop>>* loops){
+void data::build_shape_index(MutableS2ShapeIndex *index, std::vector<std::unique_ptr<S2Loop>> *loops) {
     MutableS2ShapeIndex::Options options;
 
     //define the granularity here, smaller number results in faster queries and higher space consumption
@@ -51,17 +51,21 @@ void data::build_shape_index(MutableS2ShapeIndex* index, std::vector<std::unique
     index->Init(options);
 
     //add loops to the index - transfers the ownership of the loops to the index!!!
-    for (size_t i  = 0; i < loops->size(); i++) {
+    for (size_t i = 0; i < loops->size(); i++) {
         if (!(*loops)[i]->IsValid()) {
+#ifdef __DEBUG
             std::cerr << "This loop is not valid!" << std::endl;
+#endif
         }
-        if(!(*loops)[i]->IsNormalized()) {
+        if (!(*loops)[i]->IsNormalized()) {
             // Normalize loop, otherwise the result is wrong.
             (*loops)[i]->Normalize();
+#ifdef __DEBUG
             std::cerr << "It seems that loop " << std::to_string(i) << " is not normalized" << std::endl;
+#endif
         }
 
-        S2Loop* loop_ptr = (*loops)[i].release();
+        S2Loop *loop_ptr = (*loops)[i].release();
         index->Add(std::make_unique<S2Loop::Shape>(loop_ptr));
     }
 
@@ -69,7 +73,7 @@ void data::build_shape_index(MutableS2ShapeIndex* index, std::vector<std::unique
 }
 
 
-S2Point data::parse_point(std::string& point){
+S2Point data::parse_point(std::string &point) {
     std::string lng, lat;
     size_t pos = 0;
     std::string neighborhood_name;
