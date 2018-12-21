@@ -33,6 +33,7 @@ using geo::UserLocationsRequest;
 using geo::UsersResponse;
 using geo::PolgonRequest;
 using geo::StatusResponse;
+using geo::UserLocation;
 
 // Server logic and implementation
 class GreeterServiceImpl final : public geoanalyser::Service {
@@ -124,7 +125,14 @@ public:
             // 5. exact check if point is in polygon, after 20-30 calls the loop builds its own shape index
             // for faster containment check
             if (loop.Contains(lower_it->first.ToPoint())) {
-                response->add_userid(lower_it->second);
+                UserLocation* user_location = response->add_userlocation();
+                // set user id
+                user_location->set_userid(lower_it->second);
+                // set user location
+                auto point = user_location->mutable_location();
+                auto lat_long = lower_it->first.ToLatLng().Normalized();
+                point->set_latitude(lat_long.lat().degrees());
+                point->set_longitude(lat_long.lng().degrees());
             }
         }
         return Status::OK;

@@ -9,7 +9,12 @@ service geoanalyser {
 }
 
 message UsersResponse {
-    repeated string userId = 1;
+    repeated UserLocation userLocation = 1;
+}
+
+message UserLocation {
+    string userId = 1;
+    Point location = 2;
 }
 
 message PolgonRequest {
