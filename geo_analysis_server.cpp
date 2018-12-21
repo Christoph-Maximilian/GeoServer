@@ -3,7 +3,7 @@
 //
 
 //uncomment for debug output
-//#define __DEBUG
+#define __DEBUG
 
 #include <iostream>
 #include <memory>
@@ -34,7 +34,7 @@ using geo::UsersResponse;
 using geo::PolgonRequest;
 using geo::StatusResponse;
 
-// Logic and data behind the server's behavior.
+// Server logic and implementation
 class GreeterServiceImpl final : public geoanalyser::Service {
     using PositionUserIdType = std::pair<S2CellId, std::string>;
 
@@ -118,8 +118,13 @@ public:
         auto lower_it = std::lower_bound(_user_location_ids.begin(), _user_location_ids.end(), min, comparator);
         auto upper_it = std::lower_bound(_user_location_ids.begin(), _user_location_ids.end(), max, comparator);
 
+
+#ifdef __DEBUG
+        std::cout << "#elements found in binary search: " << std::to_string(std::distance(lower_it, upper_it)) << std::endl;
+#endif
+
         for (; lower_it != upper_it; lower_it++) {
-            // exact check if point is in polygon, after 20-30 calls the loop builds its own shape index
+            // 5. exact check if point is in polygon, after 20-30 calls the loop builds its own shape index
             // for faster containment check
             if (loop.Contains(lower_it->first.ToPoint())) {
                 response->add_userid(lower_it->second);
