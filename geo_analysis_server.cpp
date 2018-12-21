@@ -19,6 +19,7 @@
 #include "s2/s2edge_crosser.h"
 #include "s2/s2shape_index.h"
 #include "s2/s2shapeutil_shape_edge.h"
+#include <unordered_map>
 
 using grpc::Server;
 using grpc::ServerBuilder;
@@ -34,10 +35,19 @@ using geo::UsersResponse;
 using geo::PolgonRequest;
 using geo::StatusResponse;
 using geo::UserLocation;
+using geo::GranularityLevel;
+using geo::HeatMap;
+
+struct pair_hash {
+    auto operator () (const S2CellId &cell_id) const {
+        return cell_id.id();
+    }
+};
 
 // Server logic and implementation
 class GreeterServiceImpl final : public geoanalyser::Service {
     using PositionUserIdType = std::pair<S2CellId, std::string>;
+    using CellMap = std::unordered_map<S2CellId, uint32_t, pair_hash >;
 
 public:
     GreeterServiceImpl(std::vector<std::string> neighborhood_names, MutableS2ShapeIndex *index_ptr) {
@@ -172,6 +182,42 @@ public:
         return Status::OK;
     }
 
+    Status GetHeatmap(ServerContext* context, const GranularityLevel* request, HeatMap* response) override {
+        auto level = request->level();
+        CellMap cell_map;
+        // 1. convert all latest location points to S2CellID and save them in a dedicated Hashtable.
+        for (auto& cell_id : _user_location_ids) {
+            auto parentCell = cell_id.first.parent(level);
+            auto iterator = cell_map.find(parentCell);
+
+            // 2. check if this cell already exists or if it must be newly inserted
+            if (iterator != cell_map.end()) {
+                // CellId already inserted
+                iterator->second++;
+            }
+            else {
+                cell_map.insert(std::make_pair(parentCell, 1));
+            }
+        }
+
+        // 3. iterate through Hashtable
+        for (auto it = cell_map.begin(); it != cell_map.end(); it++) {
+            auto heat_map = response->add_heatmap();
+            //add vertices of this cell
+            for (uint8_t i = 0; i < 4; i++) {
+                auto point = heat_map->add_vertices();
+                S2Cell cell(it->first);
+                S2LatLng lat_lng_point(cell.GetVertex(i)); //get latlong from S2Point directly
+                point->set_latitude(static_cast<float>(lat_lng_point.lat().degrees()));
+                point->set_longitude(static_cast<float>(lat_lng_point.lng().degrees()));
+            }
+            heat_map->set_count(it->second);
+            heat_map->set_cellid(it->first.id());
+        }
+
+        return Status::OK;
+
+    }
 private:
 
     std::vector<std::string> _neighborhood_names;

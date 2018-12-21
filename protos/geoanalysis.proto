@@ -6,6 +6,21 @@ service geoanalyser {
     rpc GetNeighborhoodsCount(PointRequest) returns (NeighborhoodCountsResponse);
     rpc SetLastUserLocations(UserLocationsRequest) returns (StatusResponse);
     rpc GetUsersInPolygon(PolgonRequest) returns (UsersResponse);
+    rpc GetHeatmap(GranularityLevel) returns (HeatMap);
+}
+
+message GranularityLevel {
+    int32 level = 1;
+}
+
+message HeatMap {
+    repeated HeatMapCell heatMap = 1;
+}
+
+message HeatMapCell {
+    repeated Point vertices = 1;
+    int32 count = 2;
+    int64 cellId = 3;
 }
 
 message UsersResponse {
