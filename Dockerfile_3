@@ -8,4 +8,4 @@ WORKDIR /usr/src/ServerGRPCTest
 RUN ./grpc_file_generation.sh
 
 # Make the application - build type Release
-RUN mkdir build && cd build && cmake -DCMAKE_BUILD_TYPE=Release .. && make
+RUN mkdir build && cd build && cmake .. && make -j4 ServerGRPCTest
