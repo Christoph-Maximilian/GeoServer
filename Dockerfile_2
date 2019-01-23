@@ -16,4 +16,4 @@ RUN make install
 
 #clone S2
 WORKDIR /usr/src/
-RUN git clone https://github.com/google/s2geometry.git
+RUN git clone https://github.com/Christoph-Maximilian/s2geometry
