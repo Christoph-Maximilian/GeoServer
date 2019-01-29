@@ -250,6 +250,9 @@ void RunServer() {
     GreeterServiceImpl service(neighborhood_names, &index);
 
     ServerBuilder builder;
+    builder.SetMaxReceiveMessageSize(INT_MAX);
+    builder.SetMaxSendMessageSize(INT_MAX);
+
     // Listen on the given address without any authentication mechanism.
     builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
     // Register "service" as the instance through which we'll communicate with
