@@ -7,7 +7,11 @@ service geoanalyser {
     rpc SetLastUserLocations(UserLocationsRequest) returns (StatusResponse);
     rpc GetUsersInPolygon(PolgonRequest) returns (UsersResponse);
     rpc GetHeatmap(GranularityLevel) returns (HeatMap);
-    rpc GetUsersInS2Square(S2SquareRequest) returns
+    rpc GetUsersInS2Square(S2SquareRequest) returns (UserIds);
+}
+
+message S2SquareRequest {
+    uint64 cellId = 1;
 }
 
 message GranularityLevel {
@@ -21,11 +25,15 @@ message HeatMap {
 message HeatMapCell {
     repeated Point vertices = 1;
     int32 count = 2;
-    int64 cellId = 3;
+    uint64 cellId = 3;
 }
 
 message UsersResponse {
     repeated UserLocation userLocation = 1;
+}
+
+message UserIds {
+    repeated string userIds = 1;
 }
 
 message UserLocation {

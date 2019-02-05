@@ -37,6 +37,8 @@ using geo::StatusResponse;
 using geo::UserLocation;
 using geo::GranularityLevel;
 using geo::HeatMap;
+using geo::S2SquareRequest;
+using geo::UserIds;
 
 struct pair_hash {
     auto operator () (const S2CellId &cell_id) const {
@@ -52,6 +54,7 @@ class GreeterServiceImpl final : public geoanalyser::Service {
 public:
     GreeterServiceImpl(std::vector<std::string> neighborhood_names, MutableS2ShapeIndex *index_ptr) {
         _neighborhood_names = std::move(neighborhood_names);
+        _cell_map = CellMap();
         _index_ptr = index_ptr;
     }
 
@@ -149,6 +152,20 @@ public:
     };
 
 
+    Status GetUsersInS2Square(::grpc::ServerContext* context, const ::geo::S2SquareRequest* request, ::geo::UserIds* response) override {
+        auto cell_id = S2CellId(request->cellid());
+        // get all users in specific s2 cell
+        auto it = _cell_map.find(cell_id);
+
+        if (it != _cell_map.end()) {
+            for (auto && value: it->second.second) {
+                response->add_userids(value);
+            }
+        }
+        return Status::OK;
+    }
+
+
     Status GetNeighborhoodsCount(ServerContext *context, const PointRequest *pointRequest,
                                  NeighborhoodCountsResponse *response) override {
         std::vector<S2Point> points;
@@ -184,25 +201,25 @@ public:
 
     Status GetHeatmap(ServerContext* context, const GranularityLevel* request, HeatMap* response) override {
         auto level = request->level();
-        CellMap cell_map;
+        _cell_map.clear();
         // 1. convert all latest location points to S2CellID and save them in a dedicated Hashtable.
         for (auto& cell_id_user_id : _user_location_ids) {
             auto parentCell = cell_id_user_id.first.parent(level);
-            auto iterator = cell_map.find(parentCell);
+            auto iterator = _cell_map.find(parentCell);
 
             // 2. check if this cell already exists or if it must be newly inserted
-            if (iterator != cell_map.end()) {
+            if (iterator != _cell_map.end()) {
                 // CellId already inserted
                 iterator->second.first++;
                 iterator->second.second.emplace_back(cell_id_user_id.second);
             }
             else {
-                cell_map.insert(std::make_pair(parentCell, std::make_pair(1, std::vector<std::string>{cell_id_user_id.second})));
+                _cell_map.insert(std::make_pair(parentCell, std::make_pair(1, std::vector<std::string>{cell_id_user_id.second})));
             }
         }
 
         // 3. iterate through Hashtable
-        for (auto it = cell_map.begin(); it != cell_map.end(); it++) {
+        for (auto it = _cell_map.begin(); it != _cell_map.end(); it++) {
             auto heat_map = response->add_heatmap();
             //add vertices of this cell
             for (uint8_t i = 0; i < 4; i++) {
@@ -224,6 +241,7 @@ private:
     std::vector<std::string> _neighborhood_names;
     MutableS2ShapeIndex *_index_ptr;
     std::vector<std::pair<S2CellId, std::string>> _user_location_ids;
+    CellMap _cell_map;
 };
 
 void RunServer() {
