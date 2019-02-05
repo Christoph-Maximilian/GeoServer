@@ -7,6 +7,7 @@ service geoanalyser {
     rpc SetLastUserLocations(UserLocationsRequest) returns (StatusResponse);
     rpc GetUsersInPolygon(PolgonRequest) returns (UsersResponse);
     rpc GetHeatmap(GranularityLevel) returns (HeatMap);
+    rpc GetUsersInS2Square(S2SquareRequest) returns
 }
 
 message GranularityLevel {
@@ -34,6 +35,7 @@ message UserLocation {
 
 message PolgonRequest {
     repeated Point vertices = 1;
+    string userId = 2;
 }
 
 // contains two lists with user ids and the users locations

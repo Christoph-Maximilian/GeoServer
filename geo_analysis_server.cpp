@@ -47,7 +47,7 @@ struct pair_hash {
 // Server logic and implementation
 class GreeterServiceImpl final : public geoanalyser::Service {
     using PositionUserIdType = std::pair<S2CellId, std::string>;
-    using CellMap = std::unordered_map<S2CellId, uint32_t, pair_hash >;
+    using CellMap = std::unordered_map<S2CellId, std::pair<uint32_t ,std::vector<std::string>>, pair_hash >;
 
 public:
     GreeterServiceImpl(std::vector<std::string> neighborhood_names, MutableS2ShapeIndex *index_ptr) {
@@ -186,17 +186,18 @@ public:
         auto level = request->level();
         CellMap cell_map;
         // 1. convert all latest location points to S2CellID and save them in a dedicated Hashtable.
-        for (auto& cell_id : _user_location_ids) {
-            auto parentCell = cell_id.first.parent(level);
+        for (auto& cell_id_user_id : _user_location_ids) {
+            auto parentCell = cell_id_user_id.first.parent(level);
             auto iterator = cell_map.find(parentCell);
 
             // 2. check if this cell already exists or if it must be newly inserted
             if (iterator != cell_map.end()) {
                 // CellId already inserted
-                iterator->second++;
+                iterator->second.first++;
+                iterator->second.second.emplace_back(cell_id_user_id.second);
             }
             else {
-                cell_map.insert(std::make_pair(parentCell, 1));
+                cell_map.insert(std::make_pair(parentCell, std::make_pair(1, std::vector<std::string>{cell_id_user_id.second})));
             }
         }
 
@@ -211,7 +212,7 @@ public:
                 point->set_latitude(static_cast<float>(lat_lng_point.lat().degrees()));
                 point->set_longitude(static_cast<float>(lat_lng_point.lng().degrees()));
             }
-            heat_map->set_count(it->second);
+            heat_map->set_count(it->second.first);
             heat_map->set_cellid(it->first.id());
         }
 
